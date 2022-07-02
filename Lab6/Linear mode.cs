@@ -6,24 +6,17 @@ namespace Lab6
 {
     public class Linear_mode
     {
-        //Програма має вивести всі точки, що потрапляють в цей радіус
-
-        public static Dictionary<float, float> FindingPointsLinearly(float latitude, float longitude, float radius)
+        public static List<Point> FindingPointsLinearly(double latitude, double longitude, double radius)
         {
-            /*
-            string pathToFile = @"C:\Users\Kate\Desktop\University\Programming\dictionary.txt";
-            string[] allLines = File.ReadAllLines(pathToFile);
-            */
-            
             string[] contents = System.IO.File.ReadAllLines("ukraine_poi.csv");
-            Dictionary<float, float> appropriatePoints = new Dictionary<float, float>();
+            List<Point> allPoints = new List<Point>();
             CultureInfo point = (CultureInfo)CultureInfo.InvariantCulture.Clone();
             point.NumberFormat.NumberDecimalSeparator = ",";
             point.NumberFormat.NumberGroupSeparator = "";
-            float maxLatitude = 0;
-            float minLatitude = 180;
-            float maxLongtitude = 0;
-            float minLongtitude = 180;
+            double maxLatitude = 0;
+            double minLatitude = 180;
+            double maxLongitude = 0;
+            double minLongitude = 180;
             foreach (var line in contents)
             {
                 string[] lineSeparated = line.Split(';');
@@ -32,8 +25,8 @@ namespace Lab6
                     continue;
                 }
                 
-                float latitudeFromFile = float.Parse(lineSeparated[0], point);
-                float longitudeFromFile = float.Parse(lineSeparated[1], point);
+                double latitudeFromFile = double.Parse(lineSeparated[0], point);
+                double longitudeFromFile = double.Parse(lineSeparated[1], point);
                 if (latitudeFromFile > maxLatitude)
                 {
                     maxLatitude = latitudeFromFile;
@@ -44,38 +37,52 @@ namespace Lab6
                     minLatitude = latitudeFromFile;
                 }
 
-                if (longitudeFromFile > maxLongtitude)
+                if (longitudeFromFile > maxLongitude)
                 {
-                    maxLongtitude = longitudeFromFile;
+                    maxLongitude = longitudeFromFile;
                 }
 
-                if (longitudeFromFile < minLongtitude)
+                if (longitudeFromFile < minLongitude)
                 {
-                    minLongtitude = longitudeFromFile;
+                    minLongitude = longitudeFromFile;
                 }
-                
-                if (CountingDistance(latitude, latitudeFromFile, longitude, longitudeFromFile) < radius)
-                {
-                    appropriatePoints[latitudeFromFile] = longitudeFromFile;
-                }
+                allPoints.Add(new Point(latitudeFromFile, longitudeFromFile));
             }
 
-            Console.WriteLine($"Max Lat: {maxLatitude}, max long: {maxLongtitude}, min lat: {minLatitude} min long: {minLongtitude}");
+            Point centre = new Point(latitude, longitude);
+            List<Point> appropriatePoints = FindPointsFromCircle(allPoints, radius, centre);
+
             return appropriatePoints;
         }
 
-        public static float CountingDistance(float latitude, float latitudeFromFile, float longitude, float longitudeFromFile)
+        public static List<Point> FindPointsFromCircle(List<Point> allPoints, double radius, Point centre)
         {
-            float RadiusOfEarth = 6371; 
+            List<Point> appropriatePoints = new List<Point>();
+            foreach (var pointFromFile in allPoints)
+            {
+                if (CountingDistance(centre.Latitude, centre.Longitude, 
+                        pointFromFile.Latitude, pointFromFile.Longitude) < radius)
+                {
+                    appropriatePoints.Add(pointFromFile);
+                }
+            }
+
+            return appropriatePoints;
+        }
+
+        public static double CountingDistance(double latitude, double longitude, double latitudeFromFile, double longitudeFromFile)
+        {
+            double RadiusOfEarth = 6371; 
             double φ1 = latitude * Math.PI/180; 
             double φ2 = latitudeFromFile * Math.PI/180;
-            double Δφ = (latitudeFromFile-latitude) * Math.PI/180;
-            double Δλ = (longitudeFromFile-longitude) * Math.PI/180;
+            double deltaφ = (latitudeFromFile-latitude) * Math.PI/180;
+            double deltaλ = (longitudeFromFile-longitude) * Math.PI/180;
 
-            double a = Math.Sin(Δφ/2) * Math.Sin(Δφ/2) + Math.Cos(φ1) * Math.Cos(φ2) * Math.Sin(Δλ/2) * Math.Sin(Δλ/2);
+            double a = Math.Sin(deltaφ/2) * Math.Sin(deltaφ/2) + Math.Cos(φ1) * Math.Cos(φ2) * Math.Sin(deltaλ/2) * Math.Sin(deltaλ/2);
             double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1-a));
             double d = RadiusOfEarth * c;
-            return float.Parse(d.ToString());
+            return d;
         }
+        
     }
 }

@@ -2,7 +2,12 @@
 {
     public class Point
     {
-        public float Latitude { get; set; }
-        public float Longitude { get; set; }
+        public Point(double latitude, double longitude)
+        {
+            Latitude = latitude;
+            Longitude = longitude;
+        }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }

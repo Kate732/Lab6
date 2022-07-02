@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection.Metadata.Ecma335;
 
 namespace Lab6
@@ -9,121 +10,127 @@ namespace Lab6
     public class K_d_tree
     {
         public Node Root { get; set; }
-        // public List<Point> Find(); // todo
+        
         public K_d_tree(List<Point> allPoints)
         {
             Rectangle rootRectangle = new Rectangle(allPoints);
-            Root = new Node(rootRectangle);
+            Root = new Node(rootRectangle, true);
         }
-    }
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-   
-        public bool Add(float value)
+        public List<Point> FindInRectangle(Rectangle areaOfLooking, Node currentNode)
         {
-            Node previous = null;
-            Node next = Root;
-
-            while (next != null)
+            if (!IsCrossing(currentNode.Value, areaOfLooking))
             {
-                previous = next;
-                if (value < next.Value)
-                {
-                    next = next.LeftNode;
-                }
-                else if (value > next.Value)
-                {
-                    next = next.RightNode;
-                }
-                else
-                {
-                    return false;
-                }
-
+                return new List<Point>();
             }
 
-            Node newNode = new Node{Value = value};
-
-            if (Root == null)
+            List<Point> pointsInArea = new List<Point>();
+            if (currentNode.LeftNode == null)
             {
-                Root = newNode;
+                pointsInArea.AddRange(FindPointsInArea(currentNode.Value, areaOfLooking));
             }
+
             else
             {
-                if (value < previous.Value)
+                pointsInArea.AddRange(FindInRectangle(areaOfLooking, currentNode.LeftNode));
+                pointsInArea.AddRange(FindInRectangle(areaOfLooking, currentNode.RightNode));
+            }
+
+            return pointsInArea;
+        }
+
+        /*private List<Point> PointsInCircle(Rectangle currentNodeValue, Rectangle areaOfLooking)
+        {
+            List<Point> appropriatePoints = new List<Point>();
+            float latitudeCentre = (areaOfLooking.LatMax + areaOfLooking.LatMin) / 2;
+            float longitudeCentre = (areaOfLooking.LongMax + areaOfLooking.LongMin) / 2;
+            float radius = (areaOfLooking.LatMax - areaOfLooking.LatMin) / 2;
+            foreach (var point in currentNodeValue.RectPoints)
+            {
+                if (Linear_mode.CountingDistance(latitudeCentre, point.Latitude, 
+                        longitudeCentre, point.Longitude) < radius)
                 {
-                    previous.LeftNode = newNode;
+                    appropriatePoints.Add(point);
                 }
-                else
+            }
+
+            return appropriatePoints;
+        }*/
+
+        private List<Point> FindPointsInArea(Rectangle currentNodeValue, Rectangle areaOfLooking)
+        {
+            List<Point> pointsInArea = new List<Point>();
+            foreach (var point in currentNodeValue.RectPoints)
+            {
+                if (point.Latitude > areaOfLooking.LatMin && point.Latitude < areaOfLooking.LatMax
+                    && point.Longitude > areaOfLooking.LongMin && point.Longitude < areaOfLooking.LongMax)
                 {
-                    previous.RightNode = newNode;
+                    pointsInArea.Add(point);
+                }
+            }
+
+            return pointsInArea;
+        }
+
+        public bool IsCrossing(Rectangle rectangle1, Rectangle rectangle2)
+        {
+            List<Point> cornersRectangle1 = CornersOfRectangle(rectangle1);
+            List<Point> cornersRectangle2 = CornersOfRectangle(rectangle2);
+            int crosses = 0;
+            foreach (var corner in cornersRectangle1)
+            {
+                bool isPointInsideRectangle = PointIn(rectangle2, corner);
+                if (isPointInsideRectangle)
+                {
+                    crosses += 1;
                 }
             }
             
-            return true;
-        }
-        
-        
-
-        public void Remove(float value)
-        {
-            Root = RemoveNode(Root, value); 
-        }
-
-        private Node RemoveNode(Node parent, float value)
-        {
-            if (parent == null)
+            if (crosses > 0)
             {
-                return null;
+                return true;
             }
-
-            if (value < parent.Value)
+            
+            foreach (var corner in cornersRectangle2)
             {
-                parent.LeftNode = RemoveNode(parent.LeftNode, value);
-            }
-            else if (value > parent.Value)
-            {
-                parent.RightNode = RemoveNode(parent.RightNode, value);
-            }
-            else
-            {
-                if (parent.LeftNode == null)
+                bool isPointInsideRectangle = PointIn(rectangle1, corner);
+                if (isPointInsideRectangle)
                 {
-                    return parent.RightNode;
+                    crosses += 1;
                 }
-                if (parent.RightNode == null)
-                {
-                    return parent.RightNode;
-                }
-                parent.Value = float.Parse(MinValue(parent.RightNode).ToString(), CultureInfo.InvariantCulture);
-                parent.RightNode = RemoveNode(parent.RightNode, parent.Value);
             }
 
-            return parent;
+            if (crosses > 0)
+            {
+                return true;
+            }
+            
+            return false;
+        }
+
+        private bool PointIn(Rectangle rectangle, Point corner)
+        {
+            if (corner.Latitude >= rectangle.LatMin && corner.Latitude <= rectangle.LatMax 
+                && corner.Longitude >= rectangle.LongMin && corner.Longitude <= rectangle.LongMax)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private List<Point> CornersOfRectangle(Rectangle rectangle1)
+        {
+            List<Point> corners = new List<Point>();
+            Point leftUpPoint = new Point(rectangle1.LatMax, rectangle1.LongMin);
+            Point leftDownPoint = new Point(rectangle1.LatMin, rectangle1.LongMin);
+            Point rightUpPoint = new Point(rectangle1.LatMax, rectangle1.LongMax);
+            Point rightDownPoint = new Point(rectangle1.LatMin, rectangle1.LongMax);
+            corners.Add(leftUpPoint);
+            corners.Add(rightUpPoint);
+            corners.Add(rightDownPoint);
+            corners.Add(leftDownPoint);
+            return corners;
         }
         
-        public int GetDepth()
-        {
-            return GetTreeDepth(this.Root);
-        }
-        private int GetTreeDepth(Node parent)
-        {
-            return parent == null ? 0 : Math.Max(GetTreeDepth(parent.LeftNode), GetTreeDepth(parent.RightNode)) + 1;
-        }
-*/
+    }
+}
