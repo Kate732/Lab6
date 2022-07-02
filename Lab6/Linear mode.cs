@@ -13,9 +13,9 @@ namespace Lab6
             CultureInfo point = (CultureInfo)CultureInfo.InvariantCulture.Clone();
             point.NumberFormat.NumberDecimalSeparator = ",";
             point.NumberFormat.NumberGroupSeparator = "";
-            double maxLatitude = 0;
-            double minLatitude = 180;
-            double maxLongitude = 0;
+            double maxLatitude = -90;
+            double minLatitude = 90;
+            double maxLongitude = -180;
             double minLongitude = 180;
             foreach (var line in contents)
             {
